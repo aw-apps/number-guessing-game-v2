@@ -12,6 +12,7 @@
     feedbackText: document.getElementById('feedback-text'),
     attempts: document.getElementById('attempts'),
     bestScore: document.getElementById('best-score'),
+    storageMessage: document.getElementById('storage-message'),
     remainingAttempts: document.getElementById('remaining-attempts'),
     restartButton: document.getElementById('restart-game')
   };
@@ -22,6 +23,7 @@
     !elements.feedbackText ||
     !elements.attempts ||
     !elements.bestScore ||
+    !elements.storageMessage ||
     !elements.remainingAttempts ||
     !elements.restartButton
   ) {
@@ -36,20 +38,45 @@
     bestScore: null
   };
 
+  let storageAvailable = true;
+
+  function setStorageMessage(message) {
+    elements.storageMessage.textContent = message;
+  }
+
   function getStoredBestScore() {
-    const rawValue = localStorage.getItem(BEST_SCORE_KEY);
-    if (rawValue === null) {
+    try {
+      const rawValue = localStorage.getItem(BEST_SCORE_KEY);
+      if (rawValue === null) {
+        return null;
+      }
+
+      const parsed = Number.parseInt(rawValue, 10);
+      return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+    } catch {
+      storageAvailable = false;
+      setStorageMessage('Best score saving is unavailable in this browser mode.');
       return null;
     }
+  }
 
-    const parsed = Number.parseInt(rawValue, 10);
-    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  function persistBestScore(score) {
+    if (!storageAvailable) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(BEST_SCORE_KEY, String(score));
+    } catch {
+      storageAvailable = false;
+      setStorageMessage('Best score saving is unavailable in this browser mode.');
+    }
   }
 
   function saveBestScoreIfNeeded() {
     if (gameState.bestScore === null || gameState.attempts < gameState.bestScore) {
       gameState.bestScore = gameState.attempts;
-      localStorage.setItem(BEST_SCORE_KEY, String(gameState.bestScore));
+      persistBestScore(gameState.bestScore);
     }
   }
 
