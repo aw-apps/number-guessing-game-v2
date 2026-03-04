@@ -44,6 +44,11 @@
     elements.storageMessage.textContent = message;
   }
 
+  function setFeedback(message, tone) {
+    elements.feedbackText.textContent = message;
+    elements.feedbackText.className = `feedback feedback--${tone}`;
+  }
+
   function getStoredBestScore() {
     try {
       const rawValue = localStorage.getItem(BEST_SCORE_KEY);
@@ -92,7 +97,7 @@
     gameState.attempts = 0;
     gameState.remainingAttempts = maxAttempts;
     gameState.isRoundActive = true;
-    elements.feedbackText.textContent = 'Start by entering a number.';
+    setFeedback('Start by entering a number.', 'info');
     elements.guessInput.value = '';
     render();
   }
@@ -120,13 +125,13 @@
 
   function submitGuess() {
     if (!gameState.isRoundActive) {
-      elements.feedbackText.textContent = 'Round over. Press Restart Game to play again.';
+      setFeedback('Round over. Press Restart Game to play again.', 'warning');
       return;
     }
 
     const result = parseAndValidateGuess(elements.guessInput.value);
     if (result.error) {
-      elements.feedbackText.textContent = result.error;
+      setFeedback(result.error, 'error');
       return;
     }
 
@@ -135,7 +140,10 @@
       gameState.attempts += 1;
       saveBestScoreIfNeeded();
       gameState.isRoundActive = false;
-      elements.feedbackText.textContent = `Correct! You guessed it in ${gameState.attempts} attempt${gameState.attempts === 1 ? '' : 's'}.`;
+      setFeedback(
+        `Correct! You guessed it in ${gameState.attempts} attempt${gameState.attempts === 1 ? '' : 's'}.`,
+        'success'
+      );
       render();
       return;
     }
@@ -145,12 +153,12 @@
 
     if (gameState.remainingAttempts <= 0) {
       gameState.isRoundActive = false;
-      elements.feedbackText.textContent = `No attempts left. The number was ${gameState.target}.`;
+      setFeedback(`No attempts left. The number was ${gameState.target}.`, 'warning');
       render();
       return;
     }
 
-    elements.feedbackText.textContent = guess < gameState.target ? 'Too low. Try a higher number.' : 'Too high. Try a lower number.';
+    setFeedback(guess < gameState.target ? 'Too low. Try a higher number.' : 'Too high. Try a lower number.', 'info');
     render();
   }
 
