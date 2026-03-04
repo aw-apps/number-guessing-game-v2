@@ -31,4 +31,14 @@
 本專案以 GitHub Pages 為目標：
 - 分支：`main`
 - 資料夾：`/ (root)`
-- 預期網址：`https://aw-apps.github.io/number-guessing-game-v2/`
+- 設定路徑：Repository → **Settings** → **Pages** → Source 選 `Deploy from a branch`，Branch 選 `main`、Folder 選 `/ (root)`
+- GitHub Pages 網址規則：`https://<owner>.github.io/<repo>/`
+- 本專案預期網址：`https://aw-apps.github.io/number-guessing-game-v2/`
+
+## 手動端到端驗證清單（PR 可直接引用）
+- [ ] 開啟首頁後顯示初始提示「Start by entering a number.」
+- [ ] 輸入空值/非數字/小數/超出 1-100 時，顯示對應驗證錯誤訊息
+- [ ] 輸入合法但猜錯時，嘗試次數與剩餘次數更新，並顯示 Too high/Too low
+- [ ] 猜中時遊戲結束、顯示成功訊息，且按鈕進入不可再次提交狀態
+- [ ] 按 `Restart Game` 後狀態重置並可開始新回合
+- [ ] 完成一局後重新整理頁面，Best score 仍可保留（localStorage）
