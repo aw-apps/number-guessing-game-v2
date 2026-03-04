@@ -27,6 +27,12 @@ body {
   padding: 1rem;
 }
 
+.status-note {
+  margin: 0.5rem 0 0;
+  color: #b45309;
+  font-size: 0.9rem;
+}
+
 .game__header h1 {
   margin: 0;
 }
