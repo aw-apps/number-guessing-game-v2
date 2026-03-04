@@ -1,6 +1,10 @@
 (function initializeGameShell() {
-  const MAX_ATTEMPTS = 10;
+  const DEFAULT_MAX_ATTEMPTS = 10;
   const BEST_SCORE_KEY = 'number-guessing-best-score';
+  const configuredMaxAttempts = Number.parseInt(document.body.dataset.maxAttempts || '', 10);
+  const maxAttempts = Number.isInteger(configuredMaxAttempts) && configuredMaxAttempts > 0
+    ? configuredMaxAttempts
+    : DEFAULT_MAX_ATTEMPTS;
 
   const elements = {
     guessInput: document.getElementById('guess-input'),
@@ -27,7 +31,7 @@
   const gameState = {
     target: 0,
     attempts: 0,
-    remainingAttempts: MAX_ATTEMPTS,
+    remainingAttempts: maxAttempts,
     isRoundActive: true,
     bestScore: null
   };
@@ -59,7 +63,7 @@
   function startNewRound() {
     gameState.target = Math.floor(Math.random() * 100) + 1;
     gameState.attempts = 0;
-    gameState.remainingAttempts = MAX_ATTEMPTS;
+    gameState.remainingAttempts = maxAttempts;
     gameState.isRoundActive = true;
     elements.feedbackText.textContent = 'Start by entering a number.';
     elements.guessInput.value = '';
@@ -100,16 +104,17 @@
     }
 
     const guess = result.guess;
-    gameState.attempts += 1;
-    gameState.remainingAttempts = MAX_ATTEMPTS - gameState.attempts;
-
     if (guess === gameState.target) {
+      gameState.attempts += 1;
       saveBestScoreIfNeeded();
       gameState.isRoundActive = false;
       elements.feedbackText.textContent = `Correct! You guessed it in ${gameState.attempts} attempt${gameState.attempts === 1 ? '' : 's'}.`;
       render();
       return;
     }
+
+    gameState.attempts += 1;
+    gameState.remainingAttempts -= 1;
 
     if (gameState.remainingAttempts <= 0) {
       gameState.isRoundActive = false;
