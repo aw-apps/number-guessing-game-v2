@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number Guessing Game</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="game" aria-labelledby="game-title">
+    <header class="game__header">
+      <h1 id="game-title">Number Guessing Game</h1>
+      <p class="game__subtitle">Try to guess the secret number between 1 and 100.</p>
+    </header>
+
+    <section class="panel panel--input" aria-label="Guess input">
+      <label for="guess-input">Your guess</label>
+      <div class="controls">
+        <input id="guess-input" name="guess" type="number" min="1" max="100" inputmode="numeric" placeholder="Enter 1-100">
+        <button id="submit-guess" type="button">Submit Guess</button>
+      </div>
+    </section>
+
+    <section class="panel panel--feedback" aria-live="polite" aria-label="Game feedback">
+      <p id="feedback-text">Start by entering a number.</p>
+    </section>
+
+    <section class="panel panel--score" aria-label="Score and attempts">
+      <p>Attempts: <strong id="attempts">0</strong></p>
+      <p>Best score: <strong id="best-score">-</strong></p>
+      <p>Remaining attempts: <strong id="remaining-attempts">10</strong></p>
+    </section>
+
+    <section class="panel panel--actions" aria-label="Game actions">
+      <button id="restart-game" type="button">Restart Game</button>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
