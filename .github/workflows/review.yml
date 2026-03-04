@@ -1,0 +1,122 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+
+concurrency:
+  group: copilot-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: startsWith(github.head_ref, 'issue-')
+    steps:
+      - name: Validate secrets
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          COPILOT_PAT: ${{ secrets.COPILOT_PAT }}
+        run: |
+          missing=0
+          if [ -z "$COPILOT_GITHUB_TOKEN" ]; then
+            echo "::error::Missing secret: COPILOT_GITHUB_TOKEN"
+            missing=1
+          fi
+          if [ -z "$COPILOT_PAT" ]; then
+            echo "::error::Missing secret: COPILOT_PAT"
+            missing=1
+          fi
+          [ "$missing" -eq 0 ] || exit 1
+
+      - name: Count previous reviews
+        id: count
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          COUNT=$(gh api repos/${{ github.repository }}/pulls/${PR_NUM}/reviews --jq 'length')
+          echo "review_count=${COUNT}" >> "$GITHUB_OUTPUT"
+          echo "::notice::Review count for PR #${PR_NUM}: ${COUNT}"
+
+      - name: Bail if too many reviews
+        if: steps.count.outputs.review_count >= 3
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
+          NOTIFY_TOKEN: ${{ secrets.NOTIFY_TOKEN }}
+          NOTIFY_REPO: yazelin/aw-telegram-bot
+          NOTIFY_CHAT_ID: 5764043230
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          ISSUE_NUM=$(gh pr view ${PR_NUM} --json body --jq '.body' | grep -oP 'Closes #\K\d+' || echo "")
+          if [ -n "$ISSUE_NUM" ]; then
+            gh issue edit ${ISSUE_NUM} --add-label needs-human-review
+          fi
+          gh pr close ${PR_NUM} --comment "Closing: exceeded review limit (3), needs human intervention"
+          GH_TOKEN="${NOTIFY_TOKEN}" gh workflow run notify.yml --repo ${NOTIFY_REPO} \
+            -f chat_id="${NOTIFY_CHAT_ID}" \
+            -f text="⚠️ ${{ github.repository }} PR #${PR_NUM} failed review 3 times, needs human review" || true
+          echo "Bailed: too many reviews"
+
+      - name: Checkout
+        if: steps.count.outputs.review_count < 3
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.COPILOT_PAT }}
+
+      - name: Setup Node.js
+        if: steps.count.outputs.review_count < 3
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Copilot CLI
+        if: steps.count.outputs.review_count < 3
+        run: npm install -g @github/copilot
+
+      - name: Review
+        if: steps.count.outputs.review_count < 3
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+
+          copilot --autopilot --yolo \
+            --model gpt-5.3-codex \
+            --max-autopilot-continues 10 \
+            -p "
+              You are a code reviewer for repository ${GH_REPO}.
+              Read AGENTS.md to understand the project spec and acceptance criteria.
+
+              Review PR #${PR_NUM}.
+              - Run: gh pr diff ${PR_NUM}
+              - Read the linked issue for acceptance criteria
+              - Check code quality, correctness, and completeness
+
+              IF the code is good and meets all acceptance criteria:
+                1. gh pr review ${PR_NUM} --approve -b 'LGTM - code meets requirements'
+                2. gh pr merge ${PR_NUM} --squash --delete-branch
+
+              IF there are issues:
+                1. gh pr review ${PR_NUM} --request-changes -b '<specific feedback>'
+            "
+
+      - name: Notify merge
+        if: steps.count.outputs.review_count < 3 && success()
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
+          NOTIFY_TOKEN: ${{ secrets.NOTIFY_TOKEN }}
+          NOTIFY_REPO: yazelin/aw-telegram-bot
+          NOTIFY_CHAT_ID: 5764043230
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          STATE=$(gh pr view ${PR_NUM} --json state --jq '.state')
+          if [ "$STATE" = "MERGED" ]; then
+            GH_TOKEN="${NOTIFY_TOKEN}" gh workflow run notify.yml --repo ${NOTIFY_REPO} \
+              -f chat_id="${NOTIFY_CHAT_ID}" \
+              -f text="🔀 ${{ github.repository }} PR #${PR_NUM} merged" || true
+          fi
