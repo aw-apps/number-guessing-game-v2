@@ -27,6 +27,33 @@ body {
   padding: 1rem;
 }
 
+.feedback {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.feedback--info {
+  background: #e0f2fe;
+  color: #0c4a6e;
+}
+
+.feedback--success {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.feedback--warning {
+  background: #fef3c7;
+  color: #78350f;
+}
+
+.feedback--error {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
 .status-note {
   margin: 0.5rem 0 0;
   color: #b45309;
@@ -74,8 +101,27 @@ button:hover {
   background: #1f2937;
 }
 
+input:focus-visible,
+button:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
 @media (max-width: 480px) {
   .game {
     margin: 1rem auto;
+  }
+
+  .panel {
+    padding: 0.85rem;
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  input,
+  button {
+    width: 100%;
   }
 }
